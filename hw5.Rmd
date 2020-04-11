@@ -1,0 +1,84 @@
+---
+title: Homework 5
+author: Hunter Rose; hrose33
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(stringr)
+library(tidyverse)
+library(lubridate)
+library(magrittr)
+```
+
+```{r}
+iowa <- readr::read_csv('2019_Iowa_Liquor_Sales.csv')
+```
+
+```{r}
+iowa$'Store Location_null' <- str_split_fixed(iowa$'Store Location', " ", 3)
+iowa$'Latitude' <- iowa$'Store Location_null'[,3]
+iowa$'Longitude' <- iowa$'Store Location_null'[,2]
+
+iowa$'Latitude' <- substr(iowa$'Latitude', 1, 9)
+iowa$'Longitude' <- substr(iowa$'Longitude', 2, 11)
+```
+
+```{r}
+iowa$'Date' <- str_split_fixed(iowa$'Date', "/", 3)
+iowa$'Month' <- iowa$'Date'[,1]
+iowa$'Day' <- iowa$'Date'[,2]
+iowa$'Year' <- iowa$'Date'[,3]
+iowa$'true_Date' <- paste(iowa$'Month', iowa$'Day', iowa$'Year', sep = '-') %>%
+  mdy() %>%
+  as.Date()
+```
+
+```{r}
+iowa %>%
+  ggplot(aes(x=Longitude, y=Latitude)) +geom_point() + theme(axis.text.x = element_text(angle=60, hjust = 1))
+```
+
+```{r}
+iowa$'Category Name' <- as.factor(iowa$'Category Name')
+iowa %>%
+  group_by(iowa$'Category Name', iowa$'Volume Sold (Gallons)') %>%
+  ggplot(aes(x=iowa$'Category Name', y=iowa$'Volume Sold (Gallons)')) + geom_bar(position = "dodge", stat = "identity") + theme(axis.text.x = element_text(angle=60, hjust = 1))
+```
+
+```{r}
+iowa_stats <- iowa %>%
+  filter(iowa$'Year' == 2019) %>%
+  mutate(total_sales = sum(iowa$'Sale (Dollars)')) %>%
+  mutate(total_volume = sum(iowa$'Volume Sold (Gallons)'))
+ print(max(iowa_stats$total_sales))
+ print(max(iowa_stats$total_volume))
+```
+
+```{r}
+iowa %>%
+  group_by(iowa$'true_Date', iowa$'Volume Sold (Gallons)', iowa$'Sale (Dollars)') %>%
+  ggplot(aes(x=iowa$'true_Date', y=iowa$'Sale (Dollars)')) + geom_bar(position = "dodge", stat = "identity") + theme(axis.text.x = element_text(angle=60, hjust = 1))
+
+```
+
+```{r}
+iowa %>%
+  group_by(iowa$'true_Date', iowa$'Volume Sold (Gallons)', iowa$'Sale (Dollars)') %>%
+  ggplot(aes(x=iowa$'true_Date', y=iowa$'Volume Sold (Gallons)')) + geom_point() + theme(axis.text.x = element_text(angle=60, hjust = 1)) + geom_smooth(method=lm)
+```
+
+```{r}
+iowa %>%
+  group_by(iowa$'Month', iowa$'Volume Sold (Gallons)', iowa$'Sale (Dollars)') %>%
+  ggplot(aes(x=iowa$'Volume Sold (Gallons)')) + geom_histogram() + facet_wrap(~iowa$'Month')
+
+```
+
+After looking over the graphs and looking at the dates of Iowa State home games, there is a clear trend of more sales in both dollars and volume on those days.
